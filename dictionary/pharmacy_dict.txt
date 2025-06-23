@@ -1,0 +1,15 @@
+# pharmacy_dict.txt
+amoxicillin	10000
+hydroxyzine	10000
+acetaminophen	10000
+mg	     10000
+g	     10000
+ml	     10000
+once	 8000
+twice	 8000
+daily	 8000
+tablet	 5000
+q1d	     5000
+q2d	     5000
+per	     5000
+day	     5000
