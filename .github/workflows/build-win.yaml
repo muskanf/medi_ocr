@@ -1,0 +1,76 @@
+name: build-windows-installer
+
+on:
+  push:
+    branches: [main]          # build every commit to main
+    tags:    ['v*']           # plus any tag that starts with v
+  workflow_dispatch:          # allow manual runs from the UI
+
+jobs:
+  win:
+    runs-on: windows-latest   # GitHub-hosted Windows Server 2022
+
+    env:
+      NODE_VERSION: "20"
+      PYTHON_VERSION: "3.12"
+
+    steps:
+    # --- 0. checkout ---
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0        # tags come along for release step
+
+    # --- 1. Node toolchain ---
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    # --- 2. Python toolchain ---
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    # --- 3. Install JS deps (cached) ---
+    - name: Cache npm
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+    - run: npm ci
+
+    # --- 4. Freeze extract_rx.py  ------------------------------------------
+    - name: Build frozen OCR engine
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt pyinstaller
+        pyinstaller -F extract_rx.py -n ocr_core
+        mkdir python_dist
+        copy dist\ocr_core.exe python_dist\
+
+    # --- 5. Electron Forge (makes installer) -------------------------------
+    - name: Build Windows installer
+      run: npm run make
+
+    # Path produced by Forge/Squirrel (x64 is default arch)
+    - name: Copy artefact for upload
+      shell: bash
+      run: |
+        mkdir -p artefacts
+        cp out/make/squirrel.windows/x64/*.exe artefacts/
+
+    # --- 6a. Always upload artefact (CI) -----------------------------------
+    - name: Publish artefact
+      uses: actions/upload-artifact@v4
+      with:
+        name: m3dswft-windows-installer
+        path: artefacts/*.exe
+        retention-days: 14
+
+    # --- 6b. IF this run was triggered by a tag → attach to GitHub Release --
+    - name: Release on tag
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: artefacts/*.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

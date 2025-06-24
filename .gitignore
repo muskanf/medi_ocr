@@ -11,6 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+python_dist/
 downloads/
 eggs/
 .eggs/
@@ -179,3 +180,12 @@ node_modules/
 .node_modules/
 
 out/
+
+
+# PyInstaller + Forge outputs
+/build/
+/dist/
+/out/
+/python_dist/
+# local venv
+/venv/

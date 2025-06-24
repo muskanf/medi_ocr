@@ -5,6 +5,17 @@ const {
 
 const { spawn } = require('child_process');
 const fs = require('fs');
+const path = require("path");
+
+/** Return absolute path of the OCR engine exe */
+function pythonExe() {
+  // dev ⇒ you run `electron-forge start`
+  if (process.env.NODE_ENV === "development") {
+    return path.join(__dirname, "..", "python_dist", "ocr_core.exe");
+  }
+  // prod ⇒ inside an installed build
+  return path.join(process.resourcesPath, "python_dist", "ocr_core.exe");
+}
 
 
 function App() {
@@ -13,35 +24,32 @@ function App() {
   const [loading, setLoading] = React.useState(false);
 
   // ---------- OCR pipeline ----------
-  const runOCR = (filePath) => {
-    setLoading(true);
-    setData(null);
+  function runOCR(filePath) {
+  setLoading(true);
+  setData(null);
 
-    const path = require('path')
-    const script = path.join(__dirname, 'extract_rx.py')
-    const py = spawn('python', [script, filePath])
-    let output = '';
+  const py = spawn(pythonExe(), [filePath], { windowsHide: true });
 
-    py.stdout.on('data', (chunk) => {
-      output += chunk.toString();
-    });
-    py.stdout.on('end', () => {
-      try {
-        const result = JSON.parse(output);
-        if (result.error) {
-          console.error(result.trace);
-          alert(`OCR error: ${result.error}`);
-        } else {
-          setData(result);      
-        }
-      } catch {
-        alert("Could not parse OCR output.");
+  let output = "";
+  py.stdout.on("data", chunk => (output += chunk.toString()));
+  py.stdout.on("end", () => {
+    try {
+      const result = JSON.parse(output);
+      if (result.error) {
+        console.error(result.trace);
+        alert(`OCR error: ${result.error}`);
+      } else {
+        setData(result);
       }
-      setLoading(false);
-    });
+    } catch {
+      alert("Could not parse OCR output.");
+    }
+    setLoading(false);
+  });
 
-    py.stderr.on('data', err => console.error(err.toString()));
-  };
+  py.stderr.on("data", err => console.error(err.toString()));
+}
+
 
   // File handlers 
   const handleFile = (file) => {

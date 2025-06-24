@@ -1,46 +1,46 @@
-const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+// forge.config.js
+const path = require("path");
+const fs   = require("fs/promises");
 
 module.exports = {
   packagerConfig: {
-    asar: true,
-    // icon: 'icon.ico', // we dont have an icon yet laughing emoji
+    asarUnpack: [
+      "python_dist/**",        // our frozen exe
+      "windows_tesseract/**",
+      "dictionary/**"
+    ]
   },
-  rebuildConfig: {},
-  makers: [
-    {
-      name: '@electron-forge/maker-squirrel',
-      config: {
-        name: 'm3dswft',
-        shortcutName: 'm3dswft',
-      },
-    },
-    {
-      name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
-    },
-    {
-      name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },
-  ],
-  plugins: [
-    {
-      name: '@electron-forge/plugin-auto-unpack-natives',
-      config: {},
-    },
-    new FusesPlugin({
-      version: FuseVersion.V1,
-      [FuseV1Options.RunAsNode]: false,
-      [FuseV1Options.EnableCookieEncryption]: true,
-      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
-      [FuseV1Options.EnableNodeCliInspectArguments]: false,
-      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
-      [FuseV1Options.OnlyLoadAppFromAsar]: true,
-    }),
-  ],
+  makers: [{ name: "@electron-forge/maker-squirrel" }],
+
+  hooks: {
+    /**
+     * After `npm run package` finishes, Forge gives us the paths
+     * where Electron-Packager dropped the ready-to-zip app(s).
+     */
+    async postPackage(_forgeConfig, packageResult) {
+      for (const pkgPath of packageResult.outputPaths) {
+        const resources = path.join(pkgPath, "resources");
+
+        // 1) PyInstaller output
+        await fs.cp(
+          path.join(__dirname, "python_dist"),
+          path.join(resources, "python_dist"),
+          { recursive: true }
+        );
+
+        // 2) Portable Tesseract
+        await fs.cp(
+          path.join(__dirname, "windows_tesseract"),
+          path.join(resources, "windows_tesseract"),
+          { recursive: true }
+        );
+
+        await fs.cp(
+          path.join(__dirname, "dictionary"),
+          path.join(resources, "dictionary"),
+          { recursive: true }
+        );
+      }
+    }
+  }
 };

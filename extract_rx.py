@@ -1,9 +1,56 @@
-import json, os, sys, re, logging, traceback
+# ── Locate bundled Tesseract at runtime ─────────────────────────────────────
+import sys, os, pytesseract
+import re, traceback, json
 from pathlib import Path
 
-# ── Third-party deps ─────────────────────────────────────────────────────────
+def _find_tessdir() -> Path:
+    """
+    Returns Path to windows_tesseract no matter how the binary is launched.
+    • dev  -> repo_root/windows_tesseract
+    • prod -> .../resources/windows_tesseract          (copied by Forge hook)
+    • rare -> inside _MEIPASS if we ever bundle it into the exe
+    """
+    # 1) during development (`python extract_rx.py …`)
+    here = Path(__file__).resolve().parent / "windows_tesseract"
+    if here.exists():
+        return here
+
+    # 2) packaged: ocr_core.exe lives in resources/python_dist/
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent    # …/python_dist
+        cand    = exe_dir.parent / "windows_tesseract"     # …/resources/…
+        if cand.exists():
+            return cand
+
+        # 3) fallback: inside the PyInstaller temp dir (_MEIPASS)
+        mei = Path(getattr(sys, "_MEIPASS", ""))
+        if (mei / "windows_tesseract").exists():
+            return mei / "windows_tesseract"
+
+    raise FileNotFoundError("windows_tesseract folder not found")
+
+def _find_dictdir() -> Path:
+    here = Path(__file__).resolve().parent / "dictionary"
+    if here.exists():
+        return here
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent      # …\python_dist
+        cand    = exe_dir.parent / "dictionary"              # …\resources
+        if cand.exists():
+            return cand
+        mei = Path(getattr(sys, "_MEIPASS", ""))
+        if (mei / "dictionary").exists():
+            return mei / "dictionary"
+    raise FileNotFoundError("dictionary folder not found")
+
+
+_TESS_DIR = _find_tessdir()
+pytesseract.pytesseract.tesseract_cmd = _TESS_DIR / "tesseract.exe"
+os.environ["TESSDATA_PREFIX"]        = str(_TESS_DIR / "tessdata")
+# ────────────────────────────────────────────────────────────────────────────
+
+
 import cv2
-import pytesseract
 import numpy as np
 from symspellpy import SymSpell, Verbosity
 
@@ -14,9 +61,9 @@ except ImportError:
     HAS_PDF = False
 
 # ── Configuration ────────────────────────────────────────────────────────────
-BASE_DIR  = Path(__file__).parent
-FREQ_DICT = BASE_DIR / "dictionary/pharmacy_dict.txt"
-MED_DICT  = BASE_DIR / "dictionary/medicine_names.txt"
+DICT_DIR  = _find_dictdir()
+FREQ_DICT = DICT_DIR / "pharmacy_dict.txt"
+MED_DICT  = DICT_DIR / "medicine_names.txt"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 def _init_symspell() -> SymSpell:
