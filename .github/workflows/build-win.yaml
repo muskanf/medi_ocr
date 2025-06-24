@@ -6,6 +6,12 @@ on:
     tags:    ['v*']           # plus any tag that starts with v
   workflow_dispatch:          # allow manual runs from the UI
 
+permissions:            # ⬅️  NEW
+  contents: write       # allow creating releases & uploading assets
+  # packages: write     # add if you ever push to ghcr.io
+  # actions: read       # default for everything else
+
+
 jobs:
   win:
     runs-on: windows-latest   # GitHub-hosted Windows Server 2022
