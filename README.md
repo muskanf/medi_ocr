@@ -1,55 +1,43 @@
-# 💊 Prescription Ocr: AI-Powered Prescription Reader
+# 💊 m3dswft: AI-Powered Prescription OCR
 
-**Prescription Ocr** is a lightweight, AI-powered desktop tool that lets pharmacists drag-and-drop prescription images or PDFs and automatically extracts structured medication information using state-of-the-art handwriting OCR.
+A desktop app that extracts text from prescription images and PDFs using OCR technology. Built with Electron + Python for offline processing.
 
-Built with **Electron + Python**, it supports both **modern typed prescriptions** and **scanned handwritten faxes**.
+## Features
 
----
+- **Drag & drop** prescription images (PNG, JPG) or PDFs
+- **OCR text extraction** with spell correction
+- **Offline processing** - no data leaves your machine
+- **Copy to clipboard** for easy transfer to other systems
 
-## 🚀 Features
+## Installation
 
-- 📄 Drag & drop or upload **PDFs / JPEGs / PNGs**
-- 🧾 Extracts:
-  - Patient name
-  - Date of birth
-  - Prescriber (doctor) name
-  - Medication names, dosages, and sig (instructions)
-- 📤 Outputs a structured JSON-like preview and lets you **"Send to RxConnect"**
-- 💻 Works **offline**, runs locally (no data leaves your machine)
+### Prerequisites
+- Node.js 16+
+- Python 3.8+
 
----
-
-## 🖥 Demo
-
-https://user-images.githubusercontent.com/yourvideo.gif  
-📽 _Coming soon: full walkthrough GIF_
-
----
-
-## 📦 Tech Stack
-
-| Layer        | Tech Used                                     |
-|-------------|------------------------------------------------|
-| Frontend    | [Electron](https://www.electronjs.org/), HTML, JS |
-
----
-
-## 🛠 Installation
-
-### ✅ Prerequisites
-
-- Node.js
-- Python
-
----
-
-### 🔧 Clone + Setup
-
+### Setup
 ```bash
-git clone https://github.com/muskanf/prescription_ocr
-cd prescription_ocr
-python3 -m venv venv
-source venv/bin/activate
+git clone https://github.com/muskanf/medi_ocr
+cd medi_ocr
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
 npm install
 npm start
+```
+
+## Usage
+
+1. Launch the app with `npm start`
+2. Upload a prescription image/PDF or drag & drop
+3. Wait for OCR processing
+4. Copy extracted text to clipboard
+
+## Build
+
+```bash
+# Create distributable package
+npm run package
+```
+
+Built with Electron, Python (PyTesseract), and spell correction
